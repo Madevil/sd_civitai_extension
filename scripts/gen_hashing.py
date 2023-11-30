@@ -7,9 +7,10 @@ from modules import script_callbacks, sd_vae, shared
 
 additional_network_type_map = {
     'lora': 'LORA',
+    'lyco': 'LoCon',
     'hypernet': 'Hypernetwork'
 }
-additional_network_pattern = r'<(lora|hypernet):([a-zA-Z0-9_\.\-\s]+):(\-?[0-9.]+)(?:[:].*)?>'
+additional_network_pattern = r'<(lora|lyco|hypernet):([a-zA-Z0-9_\.\-\s]+):(\-?[0-9.]+)(?:[:].*)?>'
 model_hash_pattern = r'Model hash: ([0-9a-fA-F]{10})'
 
 # Automatically pull model with corresponding hash from Civitai
@@ -61,6 +62,14 @@ def add_resource_hashes(params):
         if len(matching_resource) > 0:
             short_hash = matching_resource[0]['hash'][:10]
             resource_hashes[f'{network_type}:{network_name}'] = short_hash
+        else:
+            if network_type == 'lora':
+                network_type = 'lyco'
+                resource_type = additional_network_type_map[network_type]
+                matching_resource = [r for r in resources if r['type'] == resource_type and (r['name'].lower() == network_name.lower() or r['name'].lower().split('-')[0] == network_name.lower())]
+                if len(matching_resource) > 0:
+                    short_hash = matching_resource[0]['hash'][:10]
+                    resource_hashes[f'{network_type}:{network_name}'] = short_hash
 
     # Check for model hash in generation parameters
     model_match = re.search(model_hash_pattern, generation_params)
