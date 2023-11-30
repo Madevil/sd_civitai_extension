@@ -54,6 +54,7 @@ def add_resource_hashes(params):
         resource_hashes[f'embed:{embedding_name}'] = short_hash
 
     # Check for additional networks in prompt
+    alias = civitai.lora_networks.available_network_aliases
     network_matches = re.findall(additional_network_pattern, prompt)
     for match in network_matches:
         network_type, network_name, network_weight = match
@@ -64,12 +65,19 @@ def add_resource_hashes(params):
             resource_hashes[f'{network_type}:{network_name}'] = short_hash
         else:
             if network_type == 'lora':
-                network_type = 'lyco'
-                resource_type = additional_network_type_map[network_type]
-                matching_resource = [r for r in resources if r['type'] == resource_type and (r['name'].lower() == network_name.lower() or r['name'].lower().split('-')[0] == network_name.lower())]
-                if len(matching_resource) > 0:
-                    short_hash = matching_resource[0]['hash'][:10]
-                    resource_hashes[f'{network_type}:{network_name}'] = short_hash
+                if network_name in alias.keys():
+                    network_name = alias[network_name].name
+                    matching_resource = [r for r in resources if r['type'] == resource_type and (r['name'].lower() == network_name.lower() or r['name'].lower().split('-')[0] == network_name.lower())]
+                    if len(matching_resource) > 0:
+                        short_hash = matching_resource[0]['hash'][:10]
+                        resource_hashes[f'{network_type}:{network_name}'] = short_hash
+                else:
+                    network_type = 'lyco'
+                    resource_type = additional_network_type_map[network_type]
+                    matching_resource = [r for r in resources if r['type'] == resource_type and (r['name'].lower() == network_name.lower() or r['name'].lower().split('-')[0] == network_name.lower())]
+                    if len(matching_resource) > 0:
+                        short_hash = matching_resource[0]['hash'][:10]
+                        resource_hashes[f'{network_type}:{network_name}'] = short_hash
 
     # Check for model hash in generation parameters
     model_match = re.search(model_hash_pattern, generation_params)
@@ -84,3 +92,14 @@ def add_resource_hashes(params):
         params.pnginfo['parameters'] += f", Hashes: {json.dumps(resource_hashes)}"
 
 script_callbacks.on_before_image_saved(add_resource_hashes)
+
+import sys
+from modules.paths_internal import extensions_builtin_dir
+
+def on_app_started(block, fastapi):
+    if not extensions_builtin_dir in sys.path:
+        sys.path.append(extensions_builtin_dir)
+    from Lora import networks
+    civitai.lora_networks = networks
+
+script_callbacks.on_app_started(on_app_started)
