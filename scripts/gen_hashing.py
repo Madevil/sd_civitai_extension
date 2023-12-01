@@ -54,7 +54,8 @@ def add_resource_hashes(params):
         resource_hashes[f'embed:{embedding_name}'] = short_hash
 
     # Check for additional networks in prompt
-    alias = civitai.lora_networks.available_network_aliases
+    alias = civitai.available_lora_aliases
+    alias_keys = [] if civitai.available_lora_aliases is None else alias.keys()
     network_matches = re.findall(additional_network_pattern, prompt)
     for match in network_matches:
         network_type, network_name, network_weight = match
@@ -65,7 +66,7 @@ def add_resource_hashes(params):
             resource_hashes[f'{network_type}:{network_name}'] = short_hash
         else:
             if network_type == 'lora':
-                if network_name in alias.keys():
+                if network_name in alias_keys:
                     network_name = alias[network_name].name
                     matching_resource = [r for r in resources if r['type'] == resource_type and (r['name'].lower() == network_name.lower() or r['name'].lower().split('-')[0] == network_name.lower())]
                     if len(matching_resource) > 0:
@@ -93,13 +94,12 @@ def add_resource_hashes(params):
 
 script_callbacks.on_before_image_saved(add_resource_hashes)
 
-import sys
-from modules.paths_internal import extensions_builtin_dir
-
 def on_app_started(block, fastapi):
-    if not extensions_builtin_dir in sys.path:
-        sys.path.append(extensions_builtin_dir)
-    from Lora import networks
-    civitai.lora_networks = networks
+
+    try:
+        import lora
+        civitai.available_lora_aliases = lora.available_lora_aliases
+    except Exception:
+        civitai.available_lora_aliases = None
 
 script_callbacks.on_app_started(on_app_started)
