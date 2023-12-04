@@ -72,6 +72,13 @@ def add_resource_hashes(params):
                     if len(matching_resource) > 0:
                         short_hash = matching_resource[0]['hash'][:10]
                         resource_hashes[f'{network_type}:{network_name}'] = short_hash
+                    else:
+                        network_type = 'lyco'
+                        resource_type = additional_network_type_map[network_type]
+                        matching_resource = [r for r in resources if r['type'] == resource_type and (r['name'].lower() == network_name.lower() or r['name'].lower().split('-')[0] == network_name.lower())]
+                        if len(matching_resource) > 0:
+                            short_hash = matching_resource[0]['hash'][:10]
+                            resource_hashes[f'{network_type}:{network_name}'] = short_hash
                 else:
                     network_type = 'lyco'
                     resource_type = additional_network_type_map[network_type]
@@ -95,11 +102,11 @@ def add_resource_hashes(params):
 script_callbacks.on_before_image_saved(add_resource_hashes)
 
 def on_app_started(block, fastapi):
-
-    try:
-        import lora
+    import importlib
+    if importlib.find_loader("lora") is not None:
+        lora = importlib.import_module("lora")
         civitai.available_lora_aliases = lora.available_lora_aliases
-    except Exception:
+    else:
         civitai.available_lora_aliases = None
 
 script_callbacks.on_app_started(on_app_started)
