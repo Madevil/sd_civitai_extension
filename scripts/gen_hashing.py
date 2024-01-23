@@ -10,7 +10,7 @@ additional_network_type_map = {
     'lyco': 'LoCon',
     'hypernet': 'Hypernetwork'
 }
-additional_network_pattern = r'<(lora|lyco|hypernet):([a-zA-Z0-9_\.\-\s]+):(\-?[0-9.]+)(?:[:].*)?>'
+additional_network_pattern = r'<(lora|lyco|hypernet):([a-zA-Z0-9_\.\-\(\)\[\]\s]+):(\-?[0-9.]+)(?:[:].*)?>'
 model_hash_pattern = r'Model hash: ([0-9a-fA-F]{10})'
 
 # Automatically pull model with corresponding hash from Civitai
